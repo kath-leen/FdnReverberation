@@ -11,25 +11,27 @@
 class CommonMessage : public Message
 {
 public:
-    enum class MsgTypes {matrix = 0, delays};
+    enum class MsgType {matrix, delays};
     
-    CommonMessage(MsgTypes inputType) : type(inputType) {};
+    CommonMessage(MsgType inputType) : type(inputType) {};
+    MsgType getType() const {return type;};
     
-    MsgTypes type;
+private:
+    MsgType type;
 };
 
 class MatrixMessage : public CommonMessage
 {
 public:
-    MatrixMessage(Reverberator::FdnDimentions& inputInfo) : CommonMessage(CommonMessage::MsgTypes::matrix), info(inputInfo) {};
+    MatrixMessage(const Reverberator::FdnDimension inputInfo) : CommonMessage(CommonMessage::MsgType::matrix), info(inputInfo) {};
     
-    Reverberator::FdnDimentions info;
+    Reverberator::FdnDimension info;
 };
 
 class DelaysMessage : public CommonMessage
 {
 public:
-    DelaysMessage(std::vector<int>& inputInfo) : CommonMessage(CommonMessage::MsgTypes::delays), info(inputInfo) {};
+    DelaysMessage(const std::vector<int>&& inputInfo) : CommonMessage(CommonMessage::MsgType::delays), info(inputInfo) {};
     
     std::vector<int> info;
 };
@@ -45,7 +47,7 @@ public:
     void resized() override;
     
     const void showInfo (String&& str);
-    const void showIR (Reverberator::FdnDimentions dimention, std::vector<int>& delays);
+    const void showIR (Reverberator::FdnDimension dimension, const std::vector<int>& delays);
     
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (InfoComponent)
@@ -55,11 +57,11 @@ private:
 class AuxComponent : public Component
 {
 public:
-    AuxComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComp, MessageListener& msg);
+    AuxComponent(FdnReverberationNewAudioProcessor& processor, MessageListener& msgListener, const InfoComponent& infoComp);
     
 protected:
     FdnReverberationNewAudioProcessor& processor;
-    MessageListener& msgToPost;
+    MessageListener& msgListenerToPost;
     
     const InfoComponent& InfoComp;
     
@@ -70,7 +72,7 @@ protected:
 class MatrixComponent : public AuxComponent, public Button::Listener
 {
 public:
-    MatrixComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComp, MessageListener& msg, Reverberator::FdnDimentions inMatrix);
+    MatrixComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp, MessageListener& msgListener, Reverberator::FdnDimension matrixDim);
     void paint (Graphics&) override;
     void resized() override;
     
@@ -80,7 +82,7 @@ private:
     std::vector<std::unique_ptr<ToggleButton>> matrixButtons;
     Label nameLabel;
     
-    Reverberator::FdnDimentions currentMatrix;
+    Reverberator::FdnDimension currentMatrixDim;
     const int GroupID = 1;
 };
 
@@ -88,7 +90,7 @@ private:
 class DelayComponent : public AuxComponent, public Slider::Listener
 {
 public:
-    DelayComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComp, MessageListener& msg, std::vector<int>& inDelays);
+    DelayComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp, MessageListener& msgListener, std::vector<int>& delays);
     void paint (Graphics&) override;
     void resized() override;
     
@@ -112,7 +114,7 @@ private:
 class AdditionalComponent : public AuxComponent
 {
 public:
-    AdditionalComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComponent, MessageListener& msg);
+    AdditionalComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComponent, MessageListener& msgListener);
     void paint (Graphics&) override;
     void resized() override;
     
@@ -130,7 +132,7 @@ private:
 class MainComponent : public Component, public MessageListener
 {
 public:
-    MainComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComp);
+    MainComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp);
     
     void paint (Graphics&) override;
     void resized() override;
@@ -141,7 +143,7 @@ private:
     void updateDelays();
     
     std::vector<int> delays;
-    Reverberator::FdnDimentions matrix;
+    Reverberator::FdnDimension matrixDim;
     
     MatrixComponent matrixComp;
     DelayComponent delayComp;

@@ -25,7 +25,7 @@ const void InfoComponent::showInfo (String&& str)
     
 }
 
-const void InfoComponent::showIR (Reverberator::FdnDimentions dimention, std::vector<int>& delays)
+const void InfoComponent::showIR (Reverberator::FdnDimension dimension, const std::vector<int>& delays)
 {
     
 }
@@ -33,36 +33,36 @@ const void InfoComponent::showIR (Reverberator::FdnDimentions dimention, std::ve
 //==============================================================================
 //AuxComponent methods
 
-AuxComponent::AuxComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComp, MessageListener& msg) :
-        processor(inProcessor),
-        InfoComp(infoComp),
-        msgToPost(msg)
+AuxComponent::AuxComponent(FdnReverberationNewAudioProcessor& processor, MessageListener& msgListener, const InfoComponent& infoComp) :
+        processor(processor),
+        msgListenerToPost(msgListener),
+        InfoComp(infoComp)
 {
 }
 
 //==============================================================================
 //MatrixComponent methods
 
-MatrixComponent::MatrixComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComp, MessageListener& msg, Reverberator::FdnDimentions inMatrix):
-        AuxComponent(inProcessor, infoComp, msg),
-        currentMatrix(inMatrix)
+MatrixComponent::MatrixComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp, MessageListener& msgListener, Reverberator::FdnDimension matrixDim):
+        AuxComponent(processor, msgListener, infoComp),
+        currentMatrixDim(matrixDim)
 {
-    std::vector<Reverberator::FdnDimentions> allDimValues =
-    {Reverberator::FdnDimentions::matrix2d, Reverberator::FdnDimentions::matrix4d,
-        Reverberator::FdnDimentions::matrix8d, Reverberator::FdnDimentions::matrix16d};
+    std::vector<Reverberator::FdnDimension> allDimValues =
+    {Reverberator::FdnDimension::matrix2d, Reverberator::FdnDimension::matrix4d,
+        Reverberator::FdnDimension::matrix8d, Reverberator::FdnDimension::matrix16d};
     
-    for (Reverberator::FdnDimentions iDim : allDimValues)
+    for (Reverberator::FdnDimension iDim : allDimValues)
     {
         ToggleButton* newButton = new ToggleButton(String(int(iDim)) + "x" + String(int(iDim)));
         addAndMakeVisible(*newButton);
-        newButton->setToggleState((iDim == inMatrix) ? true : false, dontSendNotification);
+        newButton->setToggleState((iDim == matrixDim) ? true : false, dontSendNotification);
         newButton->setRadioGroupId(GroupID);
         newButton->addListener(this);
         matrixButtons.emplace_back(newButton);
     }
     
     addAndMakeVisible(nameLabel);
-    nameLabel.setText("Matrix Dimentions", dontSendNotification);
+    nameLabel.setText("Matrix Dimensions", dontSendNotification);
     nameLabel.setFont(Font(22.0f));
     nameLabel.setJustificationType(Justification::centred);
 }
@@ -91,42 +91,42 @@ void MatrixComponent::resized()
 
 void MatrixComponent::buttonClicked (Button* button)
 {
-    Reverberator::FdnDimentions newMatrix = currentMatrix;
+    Reverberator::FdnDimension newMatrix = currentMatrixDim;
     if (button == matrixButtons[0].get())
-        newMatrix = Reverberator::FdnDimentions::matrix2d;
+        newMatrix = Reverberator::FdnDimension::matrix2d;
     else if (button == matrixButtons[1].get())
-        newMatrix = Reverberator::FdnDimentions::matrix4d;
+        newMatrix = Reverberator::FdnDimension::matrix4d;
     else if (button == matrixButtons[2].get())
-        newMatrix = Reverberator::FdnDimentions::matrix8d;
+        newMatrix = Reverberator::FdnDimension::matrix8d;
     else if (button == matrixButtons[3].get())
-        newMatrix = Reverberator::FdnDimentions::matrix16d;
+        newMatrix = Reverberator::FdnDimension::matrix16d;
     
-    if (currentMatrix == newMatrix)
+    if (currentMatrixDim == newMatrix)
         return;
     
     MatrixMessage* matrixMsg = new MatrixMessage(newMatrix);
-    msgToPost.postMessage(matrixMsg);
-    currentMatrix = newMatrix;
+    msgListenerToPost.postMessage(matrixMsg);
+    currentMatrixDim = newMatrix;
 }
 
 //==============================================================================
 //DelayComponent methods
 
-DelayComponent::DelayComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComp, MessageListener& msg, std::vector<int>& inDelays):
-        AuxComponent(inProcessor, infoComp, msg),
+DelayComponent::DelayComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp, MessageListener& msgListener, std::vector<int>& delays):
+        AuxComponent(processor, msgListener, infoComp),
         randomButton("Randomize"),
         applyButton("Apply")
 {
     std::srand(std::time(nullptr));
     
-    auto delayQuantity = inDelays.size();
+    auto delayQuantity = delays.size();
     
     for (auto i = 0; i < delayQuantity; ++i)
     {
         Slider* newSlider = new Slider(Slider::RotaryVerticalDrag, Slider::TextEntryBoxPosition::TextBoxLeft);
         addAndMakeVisible(*newSlider);
         newSlider->setRange(1, MaxDelayValue, 1);
-        newSlider->setValue(correctSliderValue(inDelays[i]));
+        newSlider->setValue(correctSliderValue(delays[i]));
         newSlider->addListener(this);
         delaySliders.emplace_back(newSlider);
     }
@@ -167,7 +167,7 @@ void DelayComponent::resized()
         decltype(r.getWidth()) sliderZoneWidth = r.getWidth() / delaySliders.size();
         decltype(r.getWidth()) sliderWShift = sliderZoneWidth / 2;
         decltype(r.getWidth()) sliderHShift = nameZoneHeigth + sliderZoneHeigth / 2;
-        decltype(r.getWidth()) sliderSize = std::min({150, (int)(r.getWidth() / delaySliders.size())});
+        decltype(r.getWidth()) sliderSize = std::min(150, (int)(r.getWidth() / delaySliders.size()));
         
         for (auto &it : delaySliders)
         {
@@ -180,7 +180,7 @@ void DelayComponent::resized()
         decltype(r.getWidth()) sliderZoneWidth = r.getWidth() / delaySliders.size() * 2;
         decltype(r.getWidth()) sliderWShift = sliderZoneWidth / 2;
         decltype(r.getWidth()) sliderHShift = nameZoneHeigth + sliderZoneHeigth / 4;
-        decltype(r.getWidth()) sliderSize = std::min({150, int(r.getWidth() / (delaySliders.size() / 2))});
+        decltype(r.getWidth()) sliderSize = std::min(150, int(r.getWidth() / (delaySliders.size() / 2)));
         
         for (auto &it : delaySliders)
         {
@@ -196,7 +196,7 @@ void DelayComponent::resized()
     
     auto buttonZoneHeigth = r.getHeight() - sliderZoneHeigth - nameZoneHeigth;
     decltype(r.getWidth()) buttonWidth = 150;
-    decltype(r.getWidth()) buttonHeight = std::min({50, buttonZoneHeigth});
+    decltype(r.getWidth()) buttonHeight = std::min(50, buttonZoneHeigth);
     randomButton.setBounds(r.getWidth() / 4 - buttonWidth / 2, sliderZoneHeigth + nameZoneHeigth + buttonZoneHeigth / 2 - buttonHeight / 2, buttonWidth, buttonHeight);
     applyButton.setBounds(3 * r.getWidth() / 4 - buttonWidth / 2, sliderZoneHeigth + nameZoneHeigth + buttonZoneHeigth / 2 - buttonHeight / 2, buttonWidth, buttonHeight);
 }
@@ -237,8 +237,8 @@ void DelayComponent::sendMessage()
     for (auto &it : delaySliders)
         delays.push_back(it.get()->getValue());
     
-    DelaysMessage* delaysMsg = new DelaysMessage(delays);
-    msgToPost.postMessage(delaysMsg);
+    DelaysMessage* delaysMsg = new DelaysMessage(std::move(delays));
+    msgListenerToPost.postMessage(delaysMsg);
 }
 
 void DelayComponent::sliderValueChanged (Slider* slider)
@@ -249,8 +249,8 @@ void DelayComponent::sliderValueChanged (Slider* slider)
 //==============================================================================
 //AdditionalComponent methods
 
-AdditionalComponent::AdditionalComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComp, MessageListener& msg):
-    AuxComponent(inProcessor, infoComp, msg),
+AdditionalComponent::AdditionalComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp, MessageListener& msgListener):
+    AuxComponent(processor, msgListener, infoComp),
     saveButton("Save Preset"),
     showIrButton("Show IR"),
     drywetSlider(Slider::RotaryVerticalDrag, Slider::TextEntryBoxPosition::TextBoxBelow)
@@ -264,7 +264,7 @@ AdditionalComponent::AdditionalComponent(FdnReverberationNewAudioProcessor& inPr
     addAndMakeVisible(drywetSlider);
     drywetSlider.setRange(0, 100, 1);
     drywetSlider.setValue(50);
-    drywetSlider.onValueChange = [this]() { processor.setDryWet((float)drywetSlider.getValue() / 100.0f); };
+    drywetSlider.onValueChange = [this]() { this->processor.setDryWet((float)drywetSlider.getValue() / 100.0f); };
 }
 
 
@@ -276,11 +276,11 @@ void AdditionalComponent::paint (Graphics&)
 void AdditionalComponent::resized()
 {
     auto r = getLocalBounds();
-    auto compomentWidth = r.getWidth() / 3;
-    auto centeredHeight = r.getHeight() / 2;
-    auto buttonHeigth = std::min(40, r.getHeight());
-    auto buttonWidth = std::min(100, compomentWidth);
-    auto sliderSize = std::min({120, compomentWidth, r.getHeight()});
+    decltype(r.getWidth()) compomentWidth = r.getWidth() / 3;
+    decltype(r.getWidth()) centeredHeight = r.getHeight() / 2;
+    decltype(r.getWidth()) buttonHeigth = std::min(40, r.getHeight());
+    decltype(r.getWidth()) buttonWidth = std::min(100, compomentWidth);
+    decltype(r.getWidth()) sliderSize = std::min({120, compomentWidth, r.getHeight()});
     
     showIrButton.setBounds(compomentWidth / 2 - buttonWidth / 2, centeredHeight - buttonHeigth / 2, buttonWidth, buttonHeigth);
     saveButton.setBounds(2 * compomentWidth + compomentWidth / 2 - buttonWidth / 2, centeredHeight - buttonHeigth / 2, buttonWidth, buttonHeigth);
@@ -302,8 +302,8 @@ void AdditionalComponent::showIR()
 
 MainComponent::MainComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComp):
     delays(std::vector<int>(4, 0)),
-    matrix(Reverberator::FdnDimentions::matrix4d),
-    matrixComp(inProcessor, infoComp, *this, matrix),
+    matrixDim(Reverberator::FdnDimension::matrix4d),
+    matrixComp(inProcessor, infoComp, *this, matrixDim),
     delayComp(inProcessor, infoComp, *this, delays),
     additionalComp(inProcessor, infoComp, *this),
     processor(inProcessor),
@@ -318,7 +318,7 @@ MainComponent::MainComponent(FdnReverberationNewAudioProcessor& inProcessor, con
     nameLabel.setFont(Font(26.0f));
     nameLabel.setJustificationType(Justification::centred);
     
-    processor.setDimention(matrix);
+    processor.setDimension(matrixDim);
     processor.setDelayPowers(delays);
 }
 
@@ -344,14 +344,14 @@ void MainComponent::handleMessage (const Message & message)
     try
     {
         const CommonMessage& commonMsg = dynamic_cast<const CommonMessage&>(message);
-        if (commonMsg.type == CommonMessage::MsgTypes::matrix)
+        if (commonMsg.getType() == CommonMessage::MsgType::matrix)
         {
             const MatrixMessage& matrixMsg = dynamic_cast<const MatrixMessage&>(commonMsg);
-            matrix = matrixMsg.info;
-            processor.setDimention(matrix);
+            matrixDim = matrixMsg.info;
+            processor.setDimension(matrixDim);
             updateDelays();
         }
-        else if (commonMsg.type == CommonMessage::MsgTypes::delays)
+        else if (commonMsg.getType() == CommonMessage::MsgType::delays)
         {
             delays.clear();
             const DelaysMessage& matrixMsg = dynamic_cast<const DelaysMessage&>(commonMsg);
@@ -369,7 +369,7 @@ void MainComponent::handleMessage (const Message & message)
 
 void MainComponent::updateDelays()
 {
-    int necessaryDelaysQuantity = (int)matrix;
+    int necessaryDelaysQuantity = (int)matrixDim;
     if (necessaryDelaysQuantity < delays.size())
         while (delays.size() != necessaryDelaysQuantity)
             delays.pop_back();

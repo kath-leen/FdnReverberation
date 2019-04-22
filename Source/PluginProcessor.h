@@ -12,7 +12,7 @@ public:
     enum class ProcessingFlag { forbidden = false, allowed = true };
     
     //==============================================================================
-    FdnReverberationNewAudioProcessor(Reverberator::FdnDimentions dim = Reverberator::FdnDimentions::matrix4d, std::vector<int>&& pow = std::vector<int>{1, 2, 3, 4});
+    FdnReverberationNewAudioProcessor(Reverberator::FdnDimension dim = Reverberator::FdnDimension::matrix4d, std::vector<int>&& pow = std::vector<int>{1, 2, 3, 4});
     ~FdnReverberationNewAudioProcessor();
 
     //==============================================================================
@@ -49,10 +49,10 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
     
     //==============================================================================
-    void setDimention (Reverberator::FdnDimentions dim);
+    void setDimension (Reverberator::FdnDimension dim);
     void setDelayPowers (std::vector<int>& pow);
-    void setProcessingFlag (ProcessingFlag inFlag);
-    void setDryWet (float inDryWet);
+    void setProcessingFlag (ProcessingFlag flag);
+    void setDryWet (float drywet);
 
 private:
     //==============================================================================
@@ -66,7 +66,7 @@ private:
     std::vector<Reverberator> reverberators; //according to the amount of channels
     ProcessingState state = ProcessingState::pending;
     ProcessingFlag flag = ProcessingFlag::allowed;
-    Reverberator::FdnDimentions dimention;
+    Reverberator::FdnDimension dimension;
     std::vector<int> powers;
     int channelsNum;
     int blockLength = 0;

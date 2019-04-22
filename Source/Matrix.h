@@ -12,15 +12,16 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "vector"
+#include "utility"
 
 template <typename T> class Matrix
 {
 public:
-    Matrix(size_t inRowsSize, size_t inColsSize, T initVals) {
-        Resize(inRowsSize, inColsSize, initVals);
+    Matrix(size_t rowsSize, size_t colsSize, T&& initVals) {
+        Resize(rowsSize, colsSize, std::forward<T>(initVals));
     };
 
-    Matrix(const std::initializer_list<std::initializer_list<T>> initVals) {
+    Matrix(const std::initializer_list<std::initializer_list<T>>&& initVals) {
         rowsSize = initVals.begin()->size();
         colsSize = 0;
         for (auto &it : initVals)
@@ -37,15 +38,15 @@ public:
         colsSize = 0;
     };
 
-    void Resize(size_t inRowsSize, size_t inColsSize, T initVals) {
+    void Resize(size_t rowsSize, size_t colsSize, T&& initVals) {
         Clear();
-        rowsSize = inRowsSize;
-        colsSize = inColsSize;
-        for (auto i = 0; i < inRowsSize; ++i)
-            matrixVals.push_back(std::vector<T>(inColsSize, initVals));
+        this->rowsSize = rowsSize;
+        this->colsSize = colsSize;
+        for (auto i = 0; i < rowsSize; ++i)
+            matrixVals.emplace_back(colsSize, initVals);
     };
 
-    void Set(std::size_t row, std::size_t col, T val) {
+    void Set(std::size_t row, std::size_t col, const T&& val) {
         matrixVals[row][col] = val;
     };
 
@@ -62,7 +63,7 @@ public:
         return matrixVals[row];
     };
 
-    std::pair<std::size_t, std::size_t> GetDimentions() const {
+    std::pair<std::size_t, std::size_t> GetDimensions() const {
         return std::make_pair(rowsSize, colsSize);
     };
 
@@ -77,28 +78,28 @@ protected:
 class HadamarMatrix : public Matrix<float>
 {
 public:
-    HadamarMatrix(std::size_t dimention, float gain = 1.0f) : Matrix<float>(dimention, dimention, 0.0f) {
-        jassert(!(dimention & (dimention - 1))); // is dimention = power of 2
-        FillMatrix(dimention, gain);
+    HadamarMatrix(std::size_t dimension, float gain = 1.0f) : Matrix<float>(dimension, dimension, 0.0f) {
+        jassert(!(dimension & (dimension - 1))); // is dimension = power of 2
+        FillMatrix(dimension, gain);
     }
 private:
-    void FillMatrix(std::size_t dimention, float gain) {
-        if (dimention == 1)
+    void FillMatrix(std::size_t dimension, float gain) {
+        if (dimension == 1)
             matrixVals[0][0] =  1.0f * gain;
         else
         {
-            decltype(dimention) halfDimention = dimention / 2;
-            HadamarMatrix(halfDimention, gain);
+            std::size_t halfDimension = dimension / 2;
+            FillMatrix(halfDimension, gain);
 
-            for (auto i = halfDimention; i < dimention; ++i)
-                for (auto j = 0; j < halfDimention; ++j)
-                    matrixVals[i][j] = matrixVals[i - halfDimention][j];
-            for (auto i = 0; i < halfDimention; ++i)
-                for (auto j = halfDimention; j < dimention; ++j)
-                    matrixVals[i][j] = matrixVals[i][j - halfDimention];
-            for (auto i = halfDimention; i < dimention; ++i)
-                for (auto j = halfDimention; j < dimention; ++j)
-                    matrixVals[i][j] = -matrixVals[i - halfDimention][j - halfDimention];
+            for (auto i = halfDimension; i < dimension; ++i)
+                for (auto j = 0; j < halfDimension; ++j)
+                    matrixVals[i][j] = matrixVals[i - halfDimension][j];
+            for (auto i = 0; i < halfDimension; ++i)
+                for (auto j = halfDimension; j < dimension; ++j)
+                    matrixVals[i][j] = matrixVals[i][j - halfDimension];
+            for (auto i = halfDimension; i < dimension; ++i)
+                for (auto j = halfDimension; j < dimension; ++j)
+                    matrixVals[i][j] = -matrixVals[i - halfDimension][j - halfDimension];
         }
     }
 };

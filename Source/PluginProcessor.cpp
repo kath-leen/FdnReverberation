@@ -2,7 +2,7 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-FdnReverberationNewAudioProcessor::FdnReverberationNewAudioProcessor(Reverberator::FdnDimentions dim, std::vector<int>&& pow) :
+FdnReverberationNewAudioProcessor::FdnReverberationNewAudioProcessor(Reverberator::FdnDimension dim, std::vector<int>&& pow) :
 #ifndef JucePlugin_PreferredChannelConfigurations
      AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
@@ -13,12 +13,12 @@ FdnReverberationNewAudioProcessor::FdnReverberationNewAudioProcessor(Reverberato
                      #endif
                        ),
 #endif
-    dimention(dim),
+    dimension(dim),
     powers(pow)
 {
     channelsNum = getTotalNumInputChannels();
     for (auto i = 0; i < channelsNum; ++i)
-        reverberators.push_back(Reverberator(dim, std::move(pow)));
+        reverberators.push_back(Reverberator(dim, pow));
     checkProcessingState();
 }
 
@@ -89,12 +89,12 @@ void FdnReverberationNewAudioProcessor::changeProgramName (int index, const Stri
 }
 
 //==============================================================================
-void FdnReverberationNewAudioProcessor::setDimention (Reverberator::FdnDimentions dim)
+void FdnReverberationNewAudioProcessor::setDimension (Reverberator::FdnDimension dim)
 {
     state = ProcessingState::pending;
     for (auto i = 0; i < channelsNum; ++i)
-        reverberators[i].SetMatrix(dim);
-    dimention = dim;
+        reverberators[i].SetDimension(dim);
+    dimension = dim;
     checkProcessingState();
 }
 
@@ -107,24 +107,24 @@ void FdnReverberationNewAudioProcessor::setDelayPowers (std::vector<int>& pow)
     checkProcessingState();
 }
 
-void FdnReverberationNewAudioProcessor::setProcessingFlag (ProcessingFlag inFlag)
+void FdnReverberationNewAudioProcessor::setProcessingFlag (ProcessingFlag flag)
 {
-    flag = inFlag;
+    this->flag = flag;
     state = ProcessingState::pending;
 }
 
 void FdnReverberationNewAudioProcessor::checkProcessingState ()
 {
-    // the processing is pended in case of the delay lines (assigned by powers) quantity is not corresponded to the dimention
+    // the processing is pended in case of the delay lines (assigned by powers) quantity is not corresponded to the dimension
     // in that case the program is waiting for the correct setting of all the parameters
     
     if (flag == ProcessingFlag::allowed)
-        state = (powers.size() == (int)dimention) ? ProcessingState::running : ProcessingState::pending;
+        state = (powers.size() == (int)dimension) ? ProcessingState::running : ProcessingState::pending;
 }
 
-void FdnReverberationNewAudioProcessor::setDryWet (float inDryWet)
+void FdnReverberationNewAudioProcessor::setDryWet (float drywet)
 {
-    drywet = inDryWet;
+    this->drywet = drywet;
 }
 
 //==============================================================================
@@ -180,7 +180,7 @@ void FdnReverberationNewAudioProcessor::processBlock (AudioBuffer<float>& buffer
     // when they first compile a plugin, but obviously you don't need to keep
     // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+        buffer.clear(i, 0, buffer.getNumSamples());
     
     // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
@@ -190,9 +190,9 @@ void FdnReverberationNewAudioProcessor::processBlock (AudioBuffer<float>& buffer
     // interleaved by keeping the same state.
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        auto* channelData = buffer.getWritePointer (channel);
+        auto* channelData = buffer.getWritePointer(channel);
         if (reverberators.size() <= channel)
-            reverberators.push_back(Reverberator(dimention, std::move(powers)));
+            reverberators.push_back(Reverberator(dimension, powers));
         reverberators[channel].Reverberate(channelData, blockLength, drywet);
     }
 }
