@@ -17,9 +17,6 @@ FdnReverberationNewAudioProcessor::FdnReverberationNewAudioProcessor(Reverberato
     powers(pow)
 {
     channelsNum = getTotalNumInputChannels();
-    for (auto i = 0; i < channelsNum; ++i)
-        reverberators.push_back(Reverberator(dim, pow));
-    checkProcessingState();
 }
 
 FdnReverberationNewAudioProcessor::~FdnReverberationNewAudioProcessor()
@@ -131,6 +128,10 @@ void FdnReverberationNewAudioProcessor::setDryWet (float drywet)
 void FdnReverberationNewAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     blockLength = samplesPerBlock;
+    channelsNum = getTotalNumInputChannels();
+    for (auto i = 0; i < channelsNum; ++i)
+        reverberators.push_back(Reverberator(dimension, powers));
+    checkProcessingState();
 }
 
 void FdnReverberationNewAudioProcessor::releaseResources()

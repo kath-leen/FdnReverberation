@@ -78,25 +78,31 @@ void Reverberator::Reverberate(float* audioData, unsigned blockLength, float dry
     jassert(N == delayValues.size());
     
     int idx = 0;
-    std::vector<float> tmp(N, 0.f);
+    //std::vector<float> tmp(N, 0.f);
     for (auto n = 0; n < blockLength; ++n)
     {
         float input = audioData[n];
         float output = audioData[n];
+        
+//        for (auto i = 0; i < N; ++i)
+//        {
+//            auto delayed_idx = (idx - delayValues[i] + N) % N;
+//            tmp[i] = delayLines.Get(i, delayed_idx);
+//            output += cVector[i] * tmp[i];
+//        }
+        
         for (auto i = 0; i < N; ++i)
         {
             auto delayed_idx = (idx - delayValues[i] + N) % N;
-            tmp[i] = delayLines.Get(i, delayed_idx);
-            output += cVector[i] * tmp[i];
-        }
-        for (auto i = 0; i < N; ++i)
-        {
+            output += cVector[i] * delayLines.Get(i, delayed_idx);
+            
             float dotMultiplication = 0.f;
             for (auto j = 0; j < N; ++j)
-                dotMultiplication += tmp[j] * matrixes.at(dimension).Get(i,j);
+                dotMultiplication += delayLines.Get(j, delayed_idx) * matrixes.at(dimension).Get(i,j);
+                //dotMultiplication += tmp[j] * matrixes.at(dimension).Get(i,j);
             delayLines.Set(i, idx, input * bVector[i] + dotMultiplication);
         }
-        audioData[n] = drywet * output + (1.f - output) * input;
+        audioData[n] = drywet * output + (1.f - drywet) * input;
         idx = (idx + 1) % N;
     }
 }
