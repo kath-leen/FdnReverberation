@@ -99,7 +99,7 @@ void FdnReverberationNewAudioProcessor::setDelayPowers (std::vector<int>& pow)
 {
     state = ProcessingState::pending;
     for (auto i = 0; i < channelsNum; ++i)
-        reverberators[i].GenerateDelayValues(powers);
+        reverberators[i].GenerateDelayValues(pow);
     powers = pow;
     checkProcessingState();
 }
