@@ -9,11 +9,13 @@
 */
 
 #include "Reverberator.h"
+#include "math.h"
 
 Reverberator::Reverberator(FdnDimension dim, std::vector<int>& powers) :
         dimension(dim),
         delayLines((std::size_t)dim, (std::size_t)dim, 0.f)
 {
+    CalculateMaxPowerValues();
     GenerateDelayValues(powers);
     
     matrixes.emplace(std::piecewise_construct,
@@ -37,7 +39,8 @@ void Reverberator::GenerateDelayValues(std::vector<int>& powers)
     auto maxDelay = 0;
     for (auto &it : powers)
     {
-        auto newDelayValue = std::pow(PrimesVector[idxPrimes++], it);
+        auto power = (it % maxPowValues[idxPrimes]) ? (it % maxPowValues[idxPrimes]) : maxPowValues[idxPrimes];
+        auto newDelayValue = std::pow(PrimesVector[idxPrimes++], power);
         delayValues.push_back(newDelayValue);
         if (newDelayValue > maxDelay)
             maxDelay = newDelayValue;
@@ -50,6 +53,12 @@ void Reverberator::GenerateDelayValues(std::vector<int>& powers)
 void Reverberator::UpdateDelayLines(int maxDelayLength)
 {
     delayLines.Resize((size_t)dimension, maxDelayLength, 0.f);
+}
+
+void Reverberator::CalculateMaxPowerValues()
+{
+    for (auto &it : PrimesVector)
+        maxPowValues.push_back(floor(std::log(MaxDelay)) / std::log(it));
 }
 
 void Reverberator::SetDimension(FdnDimension dim)
@@ -77,6 +86,8 @@ void Reverberator::Reverberate(float* audioData, unsigned blockLength, float dry
     int N = (int)dimension;
     jassert(N == delayValues.size());
     
+    int delayDepth = delayLines.GetDimensions().second; // signed type is better whith delayedIdx calculation
+    
     int idx = 0;
     //std::vector<float> tmp(N, 0.f);
     for (auto n = 0; n < blockLength; ++n)
@@ -93,16 +104,16 @@ void Reverberator::Reverberate(float* audioData, unsigned blockLength, float dry
         
         for (auto i = 0; i < N; ++i)
         {
-            auto delayed_idx = (idx - delayValues[i] + N) % N;
-            output += cVector[i] * delayLines.Get(i, delayed_idx);
+            auto delayedIdx = (idx - delayValues[i] + delayDepth) % delayDepth;
+            output += cVector[i] * delayLines.Get(i, delayedIdx);
             
             float dotMultiplication = 0.f;
             for (auto j = 0; j < N; ++j)
-                dotMultiplication += delayLines.Get(j, delayed_idx) * matrixes.at(dimension).Get(i,j);
+                dotMultiplication += delayLines.Get(j, delayedIdx) * matrixes.at(dimension).Get(i,j);
                 //dotMultiplication += tmp[j] * matrixes.at(dimension).Get(i,j);
             delayLines.Set(i, idx, input * bVector[i] + dotMultiplication);
         }
         audioData[n] = drywet * output + (1.f - drywet) * input;
-        idx = (idx + 1) % N;
+        idx = (idx + 1) % delayDepth;
     }
 }

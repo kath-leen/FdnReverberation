@@ -36,6 +36,7 @@ public:
     
 private:
     void UpdateDelayLines(int maxDelayLength);
+    void CalculateMaxPowerValues();
     
     FdnDimension dimension;
     Matrix<float> delayLines;
@@ -43,15 +44,18 @@ private:
     float gain = 0.8f;
     std::vector<float> bVector;
     std::vector<float> cVector;
+    std::vector<int> maxPowValues; // the restriction to prevent the creation of very long delays (calculates based on the MaxDelay value)
     
     std::map<FdnDimension, const HadamarMatrix> matrixes;
     
     const HadamarMatrix* currentMatrix = nullptr;
     
+    const float bValue = 1.f;
+    const float cValue = 0.8f;
+    
     const std::vector<int> PrimesVector =
     {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101};
     
-    const float bValue = 1.f;
-    const float cValue = 0.8f;
+    const int MaxDelay = 50000;
 
 };
