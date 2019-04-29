@@ -53,6 +53,9 @@ public:
     void setDelayPowers (std::vector<int>& pow);
     void setProcessingFlag (ProcessingFlag flag);
     void setDryWet (float drywet);
+    
+    const Reverberator::FdnDimension getDimension ();
+    const std::vector<int>& getDelayPowers ();
 
 private:
     //==============================================================================

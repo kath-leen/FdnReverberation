@@ -124,6 +124,16 @@ void FdnReverberationNewAudioProcessor::setDryWet (float drywet)
     this->drywet = drywet;
 }
 
+const Reverberator::FdnDimension FdnReverberationNewAudioProcessor::getDimension ()
+{
+    return dimension;
+}
+
+const std::vector<int>& FdnReverberationNewAudioProcessor::getDelayPowers ()
+{
+    return powers;
+}
+
 //==============================================================================
 void FdnReverberationNewAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {

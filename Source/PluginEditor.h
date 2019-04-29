@@ -4,6 +4,7 @@
 #include "PluginProcessor.h"
 #include "Reverberator.h"
 #include "vector"
+#include "array"
 
 //==============================================================================
 /**
@@ -46,10 +47,19 @@ public:
     void paint (Graphics&) override;
     void resized() override;
     
-    const void showInfo (String&& str);
-    const void showIR (Reverberator::FdnDimension dimension, const std::vector<int>& delays);
+    void showInfo (String&& str);
+    void showIR (Reverberator::FdnDimension dimension, const std::vector<int>& delays);
     
 private:
+    float* setPulse ();
+    std::pair<float, float> findDataBoundaries ();
+    void drawData (Graphics&);
+    
+    bool toShowIR = false;
+    std::array<float, 44100> data;
+    
+    const int SamplesQuantity;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (InfoComponent)
 };
 
@@ -57,13 +67,13 @@ private:
 class AuxComponent : public Component
 {
 public:
-    AuxComponent(FdnReverberationNewAudioProcessor& processor, MessageListener& msgListener, const InfoComponent& infoComp);
+    AuxComponent(FdnReverberationNewAudioProcessor& processor, MessageListener& msgListener, InfoComponent& infoComp);
     
 protected:
     FdnReverberationNewAudioProcessor& processor;
     MessageListener& msgListenerToPost;
     
-    const InfoComponent& InfoComp;
+    InfoComponent& InfoComp;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AuxComponent)
 };
@@ -72,7 +82,7 @@ protected:
 class MatrixComponent : public AuxComponent, public Button::Listener
 {
 public:
-    MatrixComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp, MessageListener& msgListener, Reverberator::FdnDimension matrixDim);
+    MatrixComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener, Reverberator::FdnDimension matrixDim);
     void paint (Graphics&) override;
     void resized() override;
     
@@ -90,7 +100,7 @@ private:
 class DelayComponent : public AuxComponent, public Slider::Listener
 {
 public:
-    DelayComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp, MessageListener& msgListener, std::vector<int>& delays);
+    DelayComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener, std::vector<int>& delays);
     void paint (Graphics&) override;
     void resized() override;
     
@@ -114,7 +124,7 @@ private:
 class AdditionalComponent : public AuxComponent
 {
 public:
-    AdditionalComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComponent, MessageListener& msgListener);
+    AdditionalComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComponent, MessageListener& msgListener);
     void paint (Graphics&) override;
     void resized() override;
     
@@ -132,7 +142,7 @@ private:
 class MainComponent : public Component, public MessageListener
 {
 public:
-    MainComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp);
+    MainComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp);
     
     void paint (Graphics&) override;
     void resized() override;

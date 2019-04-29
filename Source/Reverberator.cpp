@@ -45,6 +45,7 @@ void Reverberator::GenerateDelayValues(std::vector<int>& powers)
         if (newDelayValue > maxDelay)
             maxDelay = newDelayValue;
     }
+    std::sort(delayValues.begin(), delayValues.end());
     UpdateDelayLines(maxDelay);
     SetBVector(std::vector<float>((int)dimension, bValue));
     SetCVector(std::vector<float>((int)dimension, cValue));

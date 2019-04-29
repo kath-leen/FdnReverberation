@@ -5,35 +5,99 @@
 //InfoComponent methods
 
 
-InfoComponent::InfoComponent()
+InfoComponent::InfoComponent() : SamplesQuantity(data.size())
 {
     
 }
 
-void InfoComponent::paint (Graphics&)
+void InfoComponent::paint (Graphics& g)
 {
-    
+    g.setColour(Colours::whitesmoke);
+    if (toShowIR)
+        drawData(g);
 }
 
 void InfoComponent::resized()
 {
-    
+    repaint();
 }
 
-const void InfoComponent::showInfo (String&& str)
+void InfoComponent::showInfo (String&& str)
 {
-    
+    toShowIR = false;
+    repaint();
 }
 
-const void InfoComponent::showIR (Reverberator::FdnDimension dimension, const std::vector<int>& delays)
+void InfoComponent::showIR (Reverberator::FdnDimension dimension, const std::vector<int>& delays)
 {
+    std::vector<int> localDelays = delays;
+    Reverberator reverbToShowIR = Reverberator(dimension, localDelays);
+    reverbToShowIR.Reverberate(setPulse(), SamplesQuantity, 1);
     
+    toShowIR = true;
+    repaint();
+}
+
+float* InfoComponent::setPulse ()
+{
+    data.fill(0.0f);
+    data[0] = 1.0f;
+    return data.data();
+}
+
+std::pair<float, float> InfoComponent::findDataBoundaries ()
+{
+    auto minVal = data[0];
+    auto maxVal = data[0];
+    for (auto &it : data)
+    {
+        if (minVal > it)
+            minVal = it;
+        if (maxVal < it)
+            maxVal = it;
+    }
+    return std::make_pair(minVal, maxVal);
+}
+
+void InfoComponent::drawData (Graphics& g)
+{
+    auto minmaxVal = findDataBoundaries();
+    
+    auto r = getLocalBounds();
+    decltype(r.getWidth()) axesGap = 10;
+    g.drawRect(axesGap, axesGap, r.getWidth() - 2 * axesGap, r.getHeight() - 2 * axesGap);
+    
+    decltype(r.getWidth()) textGap = axesGap;
+    decltype(r.getWidth()) textSize = 20;
+    g.drawText(String(minmaxVal.second), textGap + axesGap, axesGap, textSize, textSize, Justification::centredLeft);
+    g.drawText(String(minmaxVal.first), textGap + axesGap, r.getHeight() - 2 * textSize - axesGap, textSize, textSize, Justification::centredLeft);
+    
+    Rectangle<decltype(r.getWidth())> graphBoundaries(axesGap + textGap + textSize + 15, axesGap + textSize / 2, r.getWidth() - 2 * axesGap - (textGap + textSize + 15), r.getHeight() - 2 * (axesGap + textSize / 2));
+    
+    if (minmaxVal.second - minmaxVal.first < FLT_EPSILON)
+        g.drawLine(graphBoundaries.getX(), graphBoundaries.getCentreY(), graphBoundaries.getRight(), graphBoundaries.getCentreY());
+    else
+    {
+        float xStep = (float)graphBoundaries.getWidth() / (float)data.size();
+        float x = graphBoundaries.getX();
+        float y = graphBoundaries.getY() + graphBoundaries.getHeight() * (minmaxVal.second - 0.0f) / (float)(minmaxVal.second - minmaxVal.first);
+        
+        g.drawText(String(0), textGap + axesGap, y - textSize - axesGap, textSize, textSize, Justification::centredLeft);
+        
+        for (auto &it : data)
+        {
+            float newY = graphBoundaries.getY() + graphBoundaries.getHeight() * (minmaxVal.second - it) / (float)(minmaxVal.second - minmaxVal.first);
+            g.drawLine(x, y, x + xStep, newY);
+            x = x + xStep;
+            y = newY;
+        }
+    }
 }
 
 //==============================================================================
 //AuxComponent methods
 
-AuxComponent::AuxComponent(FdnReverberationNewAudioProcessor& processor, MessageListener& msgListener, const InfoComponent& infoComp) :
+AuxComponent::AuxComponent(FdnReverberationNewAudioProcessor& processor, MessageListener& msgListener, InfoComponent& infoComp) :
         processor(processor),
         msgListenerToPost(msgListener),
         InfoComp(infoComp)
@@ -43,7 +107,7 @@ AuxComponent::AuxComponent(FdnReverberationNewAudioProcessor& processor, Message
 //==============================================================================
 //MatrixComponent methods
 
-MatrixComponent::MatrixComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp, MessageListener& msgListener, Reverberator::FdnDimension matrixDim):
+MatrixComponent::MatrixComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener, Reverberator::FdnDimension matrixDim):
         AuxComponent(processor, msgListener, infoComp),
         currentMatrixDim(matrixDim)
 {
@@ -112,7 +176,7 @@ void MatrixComponent::buttonClicked (Button* button)
 //==============================================================================
 //DelayComponent methods
 
-DelayComponent::DelayComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp, MessageListener& msgListener, std::vector<int>& delays):
+DelayComponent::DelayComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener, std::vector<int>& delays):
         AuxComponent(processor, msgListener, infoComp),
         randomButton("Randomize"),
         applyButton("Apply")
@@ -249,7 +313,7 @@ void DelayComponent::sliderValueChanged (Slider* slider)
 //==============================================================================
 //AdditionalComponent methods
 
-AdditionalComponent::AdditionalComponent(FdnReverberationNewAudioProcessor& processor, const InfoComponent& infoComp, MessageListener& msgListener):
+AdditionalComponent::AdditionalComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener):
     AuxComponent(processor, msgListener, infoComp),
     saveButton("Save Preset"),
     showIrButton("Show IR"),
@@ -294,13 +358,13 @@ void AdditionalComponent::savePreset()
 
 void AdditionalComponent::showIR()
 {
-    //InfoComp.showIR();
+    InfoComp.showIR(processor.getDimension(), processor.getDelayPowers());
 }
 
 //==============================================================================
 //MainComponent methods
 
-MainComponent::MainComponent(FdnReverberationNewAudioProcessor& inProcessor, const InfoComponent& infoComp):
+MainComponent::MainComponent(FdnReverberationNewAudioProcessor& inProcessor, InfoComponent& infoComp):
     delays(std::vector<int>(4, 0)),
     matrixDim(Reverberator::FdnDimension::matrix4d),
     matrixComp(inProcessor, infoComp, *this, matrixDim),
@@ -412,5 +476,5 @@ void FdnReverberationNewAudioProcessorEditor::paint (Graphics& g)
 void FdnReverberationNewAudioProcessorEditor::resized()
 {
     mainComp.setBounds(0, 0, getWidth()*3/4, getHeight());
-    infoComp.setBounds(getWidth()*1/4, 0, getWidth(), getHeight());
+    infoComp.setBounds(getWidth()*3/4, 0, getWidth()*1/4, getHeight());
 }
