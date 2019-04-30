@@ -3,6 +3,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
 #include "Reverberator.h"
+#include "CustomComponents.h"
 #include "vector"
 #include "array"
 
@@ -47,7 +48,7 @@ public:
     void paint (Graphics&) override;
     void resized() override;
     
-    void showInfo (String&& str);
+    void showInfo (const String& str);
     void showIR (Reverberator::FdnDimension dimension, const std::vector<int>& delays);
     
 private:
@@ -55,6 +56,7 @@ private:
     std::pair<float, float> findDataBoundaries ();
     void drawData (Graphics&);
     
+    Label infoLabel;
     bool toShowIR = false;
     std::array<float, 44100> data;
     
@@ -73,7 +75,7 @@ protected:
     FdnReverberationNewAudioProcessor& processor;
     MessageListener& msgListenerToPost;
     
-    InfoComponent& InfoComp;
+    InfoComponent& infoComp;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AuxComponent)
 };
@@ -89,7 +91,7 @@ public:
 private:
     void buttonClicked (Button* button) override;
     
-    std::vector<std::unique_ptr<ToggleButton>> matrixButtons;
+    std::vector<std::unique_ptr<CustomToggleButton>> matrixButtons;
     Label nameLabel;
     
     Reverberator::FdnDimension currentMatrixDim;
@@ -112,9 +114,9 @@ private:
     void randomizeSliders();
     void sendMessage();
     
-    std::vector<std::unique_ptr<Slider>> delaySliders;
-    TextButton randomButton;
-    TextButton applyButton;
+    std::vector<std::unique_ptr<CustomSlider>> delaySliders;
+    CustomTextButton randomButton;
+    CustomTextButton applyButton;
     Label nameLabel;
     
     const int MaxDelayValue = 10;
@@ -133,9 +135,9 @@ private:
     void savePreset();
     void showIR();
     
-    TextButton saveButton;
-    TextButton showIrButton;
-    Slider drywetSlider;
+    CustomTextButton saveButton;
+    CustomTextButton showIrButton;
+    CustomSlider drywetSlider;
 };
 
 //==============================================================================
@@ -162,7 +164,7 @@ private:
     Label nameLabel;
     
     FdnReverberationNewAudioProcessor& processor;
-    const InfoComponent& InfoComp;
+    InfoComponent& infoComp;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

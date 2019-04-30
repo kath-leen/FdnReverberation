@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include <functional>
 
 //==============================================================================
 //InfoComponent methods
@@ -7,7 +8,8 @@
 
 InfoComponent::InfoComponent() : SamplesQuantity(data.size())
 {
-    
+    infoLabel.setJustificationType(Justification::topLeft);
+    addAndMakeVisible(infoLabel);
 }
 
 void InfoComponent::paint (Graphics& g)
@@ -19,17 +21,22 @@ void InfoComponent::paint (Graphics& g)
 
 void InfoComponent::resized()
 {
+    auto r = getLocalBounds();
+    infoLabel.setBounds(20, 20, r.getWidth() - 40, r.getHeight() - 40);
     repaint();
 }
 
-void InfoComponent::showInfo (String&& str)
+void InfoComponent::showInfo (const String& str)
 {
-    toShowIR = false;
+    if (str != "")
+        toShowIR = false;
+    infoLabel.setText(str, dontSendNotification);
     repaint();
 }
 
 void InfoComponent::showIR (Reverberator::FdnDimension dimension, const std::vector<int>& delays)
 {
+    infoLabel.setText("", dontSendNotification);
     std::vector<int> localDelays = delays;
     Reverberator reverbToShowIR = Reverberator(dimension, localDelays);
     reverbToShowIR.Reverberate(setPulse(), SamplesQuantity, 1);
@@ -100,7 +107,7 @@ void InfoComponent::drawData (Graphics& g)
 AuxComponent::AuxComponent(FdnReverberationNewAudioProcessor& processor, MessageListener& msgListener, InfoComponent& infoComp) :
         processor(processor),
         msgListenerToPost(msgListener),
-        InfoComp(infoComp)
+        infoComp(infoComp)
 {
 }
 
@@ -117,7 +124,7 @@ MatrixComponent::MatrixComponent(FdnReverberationNewAudioProcessor& processor, I
     
     for (Reverberator::FdnDimension iDim : allDimValues)
     {
-        ToggleButton* newButton = new ToggleButton(String(int(iDim)) + "x" + String(int(iDim)));
+        CustomToggleButton* newButton = new CustomToggleButton(String(int(iDim)) + "x" + String(int(iDim)), std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Choose the matrix dimension");
         addAndMakeVisible(*newButton);
         newButton->setToggleState((iDim == matrixDim) ? true : false, dontSendNotification);
         newButton->setRadioGroupId(GroupID);
@@ -178,8 +185,8 @@ void MatrixComponent::buttonClicked (Button* button)
 
 DelayComponent::DelayComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener, std::vector<int>& delays):
         AuxComponent(processor, msgListener, infoComp),
-        randomButton("Randomize"),
-        applyButton("Apply")
+    randomButton("Randomize", std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Randomize delay sliders values"),
+    applyButton("Apply", std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Apply all parameters and start processing")
 {
     std::srand(std::time(nullptr));
     
@@ -187,7 +194,7 @@ DelayComponent::DelayComponent(FdnReverberationNewAudioProcessor& processor, Inf
     
     for (auto i = 0; i < delayQuantity; ++i)
     {
-        Slider* newSlider = new Slider(Slider::RotaryVerticalDrag, Slider::TextEntryBoxPosition::TextBoxLeft);
+        CustomSlider* newSlider = new CustomSlider(Slider::RotaryVerticalDrag, Slider::TextEntryBoxPosition::TextBoxLeft, std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Choose the basis for generation of a delay line");
         addAndMakeVisible(*newSlider);
         newSlider->setRange(1, MaxDelayValue, 1);
         newSlider->setValue(correctSliderValue(delays[i]));
@@ -284,7 +291,7 @@ void DelayComponent::updateSliders(std::vector<int>& inDelays)
     auto delayQuantity = inDelays.size();
     for (auto i = 0; i < delayQuantity; ++i)
     {
-        Slider* newSlider = new Slider(Slider::RotaryVerticalDrag, Slider::TextEntryBoxPosition::TextBoxLeft);
+        CustomSlider* newSlider = new CustomSlider(Slider::RotaryVerticalDrag, Slider::TextEntryBoxPosition::TextBoxLeft, std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Choose the basis for generation of a delay line");
         addAndMakeVisible(*newSlider);
         newSlider->setRange(1, MaxDelayValue, 1);
         newSlider->setValue(correctSliderValue(MaxDelayValue));
@@ -315,9 +322,9 @@ void DelayComponent::sliderValueChanged (Slider* slider)
 
 AdditionalComponent::AdditionalComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener):
     AuxComponent(processor, msgListener, infoComp),
-    saveButton("Save Preset"),
-    showIrButton("Show IR"),
-    drywetSlider(Slider::RotaryVerticalDrag, Slider::TextEntryBoxPosition::TextBoxBelow)
+    saveButton("Save Preset", std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Save all parameters as a preset"),
+    showIrButton("Show IR", std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Show Impulse Response for the chosen parameters (press 'Apply' before)"),
+    drywetSlider(Slider::RotaryVerticalDrag, Slider::TextEntryBoxPosition::TextBoxBelow, std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Set dry/wet ratio")
 {
     addAndMakeVisible(saveButton);
     saveButton.onClick = [this]() {savePreset();};
@@ -358,7 +365,7 @@ void AdditionalComponent::savePreset()
 
 void AdditionalComponent::showIR()
 {
-    InfoComp.showIR(processor.getDimension(), processor.getDelayPowers());
+    infoComp.showIR(processor.getDimension(), processor.getDelayPowers());
 }
 
 //==============================================================================
@@ -371,7 +378,7 @@ MainComponent::MainComponent(FdnReverberationNewAudioProcessor& inProcessor, Inf
     delayComp(inProcessor, infoComp, *this, delays),
     additionalComp(inProcessor, infoComp, *this),
     processor(inProcessor),
-    InfoComp(infoComp)
+    infoComp(infoComp)
 {
     addAndMakeVisible(matrixComp);
     addAndMakeVisible(delayComp);
