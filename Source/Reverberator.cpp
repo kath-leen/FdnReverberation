@@ -20,16 +20,16 @@ Reverberator::Reverberator(FdnDimension dim, std::vector<int>& powers) :
     
     matrixes.emplace(std::piecewise_construct,
                      std::forward_as_tuple(FdnDimension::matrix2d),
-                     std::forward_as_tuple(2, 1.f / std::sqrt(2.f)));
+                     std::forward_as_tuple(2, commonMatrixGain * 1.f / std::sqrt(2.f)));
     matrixes.emplace(std::piecewise_construct,
                      std::forward_as_tuple(FdnDimension::matrix4d),
-                     std::forward_as_tuple(4, 0.5f));
+                     std::forward_as_tuple(4, commonMatrixGain * 0.5f));
     matrixes.emplace(std::piecewise_construct,
                      std::forward_as_tuple(FdnDimension::matrix8d),
-                     std::forward_as_tuple(8, 0.5f / std::sqrt(2.f)));
+                     std::forward_as_tuple(8, commonMatrixGain * 0.5f / std::sqrt(2.f)));
     matrixes.emplace(std::piecewise_construct,
                      std::forward_as_tuple(FdnDimension::matrix16d),
-                     std::forward_as_tuple(16, 0.25f));
+                     std::forward_as_tuple(16, commonMatrixGain * 0.25f));
 }
 
 void Reverberator::GenerateDelayValues(std::vector<int>& powers)
@@ -90,31 +90,44 @@ void Reverberator::Reverberate(float* audioData, unsigned blockLength, float dry
     int delayDepth = delayLines.GetDimensions().second; // signed type is better whith delayedIdx calculation
     
     int idx = 0;
-    //std::vector<float> tmp(N, 0.f);
+//    float maxAbsIn = 0.0f;
+//    float maxAbsOut = 0.0f;
+    
     for (auto n = 0; n < blockLength; ++n)
     {
         float input = audioData[n];
         float output = audioData[n];
         
-//        for (auto i = 0; i < N; ++i)
-//        {
-//            auto delayed_idx = (idx - delayValues[i] + N) % N;
-//            tmp[i] = delayLines.Get(i, delayed_idx);
-//            output += cVector[i] * tmp[i];
-//        }
+//        if (std::abs(input) > maxAbsIn)
+//            maxAbsIn = std::abs(input);
+        
+        std::vector<float> tmp(N, 0.f);
         
         for (auto i = 0; i < N; ++i)
         {
-            auto delayedIdx = (idx - delayValues[i] + delayDepth) % delayDepth;
-            output += cVector[i] * delayLines.Get(i, delayedIdx);
-            
+            auto delayed_idx = (idx - delayValues[i] + delayDepth) % delayDepth;
+            tmp[i] = delayLines.Get(i, delayed_idx);
+            output += cVector[i] * tmp[i];
+        }
+        
+        for (auto i = 0; i < N; ++i)
+        {
             float dotMultiplication = 0.f;
             for (auto j = 0; j < N; ++j)
-                dotMultiplication += delayLines.Get(j, delayedIdx) * matrixes.at(dimension).Get(i,j);
-                //dotMultiplication += tmp[j] * matrixes.at(dimension).Get(i,j);
+                dotMultiplication += tmp[j] * matrixes.at(dimension).Get(i,j);
             delayLines.Set(i, idx, input * bVector[i] + dotMultiplication);
         }
+        
         audioData[n] = drywet * output + (1.f - drywet) * input;
+        
+//        if (std::abs(audioData[n]) > maxAbsOut)
+//            maxAbsOut = std::abs(audioData[n]);
+        
         idx = (idx + 1) % delayDepth;
     }
+    
+    
+//    auto coefficient = maxAbsIn / maxAbsOut;
+//    for (auto n = 0; n < blockLength; ++n)
+//        audioData[n] = audioData[n] * coefficient;
 }
