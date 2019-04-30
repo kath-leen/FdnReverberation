@@ -54,6 +54,7 @@ void Reverberator::GenerateDelayValues(std::vector<int>& powers)
 void Reverberator::UpdateDelayLines(int maxDelayLength)
 {
     delayLines.Resize((size_t)dimension, maxDelayLength, 0.f);
+    delayIdx = 0;
 }
 
 void Reverberator::CalculateMaxPowerValues()
@@ -89,45 +90,32 @@ void Reverberator::Reverberate(float* audioData, unsigned blockLength, float dry
     
     int delayDepth = delayLines.GetDimensions().second; // signed type is better whith delayedIdx calculation
     
-    int idx = 0;
-//    float maxAbsIn = 0.0f;
-//    float maxAbsOut = 0.0f;
-    
     for (auto n = 0; n < blockLength; ++n)
     {
         float input = audioData[n];
         float output = audioData[n];
         
-//        if (std::abs(input) > maxAbsIn)
-//            maxAbsIn = std::abs(input);
-        
         std::vector<float> tmp(N, 0.f);
         
         for (auto i = 0; i < N; ++i)
         {
-            auto delayed_idx = (idx - delayValues[i] + delayDepth) % delayDepth;
+            auto delayed_idx = (delayIdx - delayValues[i] + delayDepth) % delayDepth;
             tmp[i] = delayLines.Get(i, delayed_idx);
             output += cVector[i] * tmp[i];
         }
+        output /= (float)N; //trying to prevent overdrive, heuristics...
         
         for (auto i = 0; i < N; ++i)
         {
             float dotMultiplication = 0.f;
             for (auto j = 0; j < N; ++j)
                 dotMultiplication += tmp[j] * matrixes.at(dimension).Get(i,j);
-            delayLines.Set(i, idx, input * bVector[i] + dotMultiplication);
+            delayLines.Set(i, delayIdx, input * bVector[i] + dotMultiplication);
         }
         
         audioData[n] = drywet * output + (1.f - drywet) * input;
         
-//        if (std::abs(audioData[n]) > maxAbsOut)
-//            maxAbsOut = std::abs(audioData[n]);
-        
-        idx = (idx + 1) % delayDepth;
+        delayIdx = (delayIdx + 1) % delayDepth;
     }
     
-    
-//    auto coefficient = maxAbsIn / maxAbsOut;
-//    for (auto n = 0; n < blockLength; ++n)
-//        audioData[n] = audioData[n] * coefficient;
 }

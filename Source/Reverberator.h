@@ -45,6 +45,7 @@ private:
     std::vector<float> bVector;
     std::vector<float> cVector;
     std::vector<int> maxPowValues; // the restriction to prevent the creation of very long delays (calculates based on the MaxDelay value)
+    int delayIdx = 0;
     
     std::map<FdnDimension, const HadamarMatrix> matrixes;
     
