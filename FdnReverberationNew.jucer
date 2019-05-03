@@ -4,6 +4,8 @@
               jucerVersion="5.4.3" companyName="kathleen">
   <MAINGROUP id="LIGEKW" name="FdnReverberationNew">
     <GROUP id="{337CE096-254E-1E4A-E7A3-CF3241AFB575}" name="Source">
+      <FILE id="rGGzLE" name="CustomComponents.cpp" compile="1" resource="0"
+            file="Source/CustomComponents.cpp"/>
       <FILE id="ubyPFH" name="CustomComponents.h" compile="0" resource="0"
             file="Source/CustomComponents.h"/>
       <FILE id="H7N4qD" name="Matrix.h" compile="0" resource="0" file="Source/Matrix.h"/>

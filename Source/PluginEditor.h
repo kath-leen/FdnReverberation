@@ -102,11 +102,11 @@ private:
 class DelayComponent : public AuxComponent, public Slider::Listener
 {
 public:
-    DelayComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener, std::vector<int>& delays);
+    DelayComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener, const std::vector<int>& delays);
     void paint (Graphics&) override;
     void resized() override;
     
-    void updateSliders(std::vector<int>& inDelays);
+    void updateSliders(const std::vector<int>& inDelays);
     
 private:
     int correctSliderValue(int value);

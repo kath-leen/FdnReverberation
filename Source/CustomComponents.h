@@ -15,18 +15,15 @@
 class CustomTextButton : public TextButton
 {
 public:
-    CustomTextButton(const String& name, const std::function<void(const String&)> infoSender, const String&& info = "This is a text button") :
-        TextButton(name), InfoSender(infoSender), Info(info) {};
+    CustomTextButton(const String& name, const std::function<void(const String&)> infoSender, const String&& info = "This is a text button");
     
-    CustomTextButton(const String& name, const String& toolTip, const std::function<void(const String&)> infoSender, const String&& info = "This is a text button") :
-        TextButton(name, toolTip), InfoSender(infoSender), Info(info) {};
+    CustomTextButton(const String& name, const String& toolTip, const std::function<void(const String&)> infoSender, const String&& info = "This is a text button");
     
-    CustomTextButton(const std::function<void(const String&)> infoSender, const String&& info = "This is a text button") :
-        TextButton(), InfoSender(infoSender), Info(info) {};
+    CustomTextButton(const std::function<void(const String&)> infoSender, const String&& info = "This is a text button");
     
 private:
-    void mouseEnter(const MouseEvent&) override { InfoSender(Info); };
-    void mouseExit(const MouseEvent&) override { InfoSender(""); };
+    void mouseEnter(const MouseEvent&) override;
+    void mouseExit(const MouseEvent&) override;
     
     const std::function<void(const String&)> InfoSender;
     const String Info;
@@ -36,15 +33,13 @@ private:
 class CustomToggleButton : public ToggleButton
 {
 public:
-    CustomToggleButton(const String& name, const std::function<void(const String&)> infoSender, const String&& info = "This is a toggle button") :
-        ToggleButton(name), InfoSender(infoSender), Info(info) {};
+    CustomToggleButton(const String& name, const std::function<void(const String&)> infoSender, const String&& info = "This is a toggle button");
     
-    CustomToggleButton(const std::function<void(const String&)> infoSender, const String&& info = "This is a toggle button") :
-        ToggleButton(), InfoSender(infoSender), Info(info) {};
+    CustomToggleButton(const std::function<void(const String&)> infoSender, const String&& info = "This is a toggle button");
     
 private:
-    void mouseEnter(const MouseEvent&) override { InfoSender(Info); };
-    void mouseExit(const MouseEvent&) override { InfoSender(""); };
+    void mouseEnter(const MouseEvent&) override;
+    void mouseExit(const MouseEvent&) override;
     
     const std::function<void(const String&)> InfoSender;
     const String Info;
@@ -54,18 +49,15 @@ private:
 class CustomSlider : public Slider
 {
 public:
-    CustomSlider (Slider::SliderStyle style, Slider::TextEntryBoxPosition textBoxPosition, const std::function<void(const String&)> infoSender, const String&& info = "This is a slider") :
-        Slider(style, textBoxPosition), InfoSender(infoSender), Info(info) {};
+    CustomSlider(Slider::SliderStyle style, Slider::TextEntryBoxPosition textBoxPosition, const std::function<void(const String&)> infoSender, const String&& info = "This is a slider");
     
-    CustomSlider (const String& componentName, const std::function<void(const String&)> infoSender, const String&& info = "This is a slider") :
-        Slider(componentName), InfoSender(infoSender), Info(info) {};
+    CustomSlider(const String& componentName, const std::function<void(const String&)> infoSender, const String&& info = "This is a slider");
     
-    CustomSlider (const std::function<void(const String&)> infoSender, const String&& info = "This is a slider") :
-        Slider(), InfoSender(infoSender), Info(info) {};
+    CustomSlider(const std::function<void(const String&)> infoSender, const String&& info = "This is a slider");
     
 private:
-    void mouseEnter(const MouseEvent&) override { InfoSender(Info); };
-    void mouseExit(const MouseEvent&) override { InfoSender(""); };
+    void mouseEnter(const MouseEvent&) override;
+    void mouseExit(const MouseEvent&) override;
     
     const std::function<void(const String&)> InfoSender;
     const String Info;

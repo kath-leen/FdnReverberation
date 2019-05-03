@@ -88,7 +88,7 @@ void Reverberator::Reverberate(float* audioData, unsigned blockLength, float dry
     int N = (int)dimension;
     jassert(N == delayValues.size());
     
-    int delayDepth = delayLines.GetDimensions().second; // signed type is better whith delayedIdx calculation
+    int delayDepth = (int)delayLines.GetDimensions().second; // signed type is better whith delayedIdx calculation
     
     for (auto n = 0; n < blockLength; ++n)
     {

@@ -1,12 +1,11 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include <functional>
 
 //==============================================================================
 //InfoComponent methods
 
 
-InfoComponent::InfoComponent() : SamplesQuantity(data.size())
+InfoComponent::InfoComponent() : SamplesQuantity((int)data.size())
 {
     infoLabel.setJustificationType(Justification::topLeft);
     addAndMakeVisible(infoLabel);
@@ -58,28 +57,28 @@ std::pair<float, float> InfoComponent::findDataBoundaries ()
     auto maxVal = data[0];
     for (auto &it : data)
     {
-        if (minVal > it)
-            minVal = it;
-        if (maxVal < it)
-            maxVal = it;
+        minVal = std::min(minVal, it);
+        maxVal = std::max(minVal, it);
     }
     return std::make_pair(minVal, maxVal);
 }
 
 void InfoComponent::drawData (Graphics& g)
 {
+    auto r = getLocalBounds();
+    using bounds_t = decltype(r.getWidth());
+    
     auto minmaxVal = findDataBoundaries();
     
-    auto r = getLocalBounds();
-    decltype(r.getWidth()) axesGap = 10;
+    bounds_t axesGap = 10;
     g.drawRect(axesGap, axesGap, r.getWidth() - 2 * axesGap, r.getHeight() - 2 * axesGap);
     
-    decltype(r.getWidth()) textGap = axesGap;
-    decltype(r.getWidth()) textSize = 20;
+    bounds_t textGap = axesGap;
+    bounds_t textSize = 20;
     g.drawText(String(minmaxVal.second), textGap + axesGap, axesGap, textSize, textSize, Justification::centredLeft);
     g.drawText(String(minmaxVal.first), textGap + axesGap, r.getHeight() - 2 * textSize - axesGap, textSize, textSize, Justification::centredLeft);
     
-    Rectangle<decltype(r.getWidth())> graphBoundaries(axesGap + textGap + textSize + 15, axesGap + textSize / 2, r.getWidth() - 2 * axesGap - (textGap + textSize + 15), r.getHeight() - 2 * (axesGap + textSize / 2));
+    Rectangle<bounds_t> graphBoundaries(axesGap + textGap + textSize + 15, axesGap + textSize / 2, r.getWidth() - 2 * axesGap - (textGap + textSize + 15), r.getHeight() - 2 * (axesGap + textSize / 2));
     
     if (minmaxVal.second - minmaxVal.first < FLT_EPSILON)
         g.drawLine(graphBoundaries.getX(), graphBoundaries.getCentreY(), graphBoundaries.getRight(), graphBoundaries.getCentreY());
@@ -126,7 +125,7 @@ MatrixComponent::MatrixComponent(FdnReverberationNewAudioProcessor& processor, I
     {
         CustomToggleButton* newButton = new CustomToggleButton(String(int(iDim)) + "x" + String(int(iDim)), std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Choose the matrix dimension");
         addAndMakeVisible(*newButton);
-        newButton->setToggleState((iDim == matrixDim) ? true : false, dontSendNotification);
+        newButton->setToggleState((iDim == matrixDim), dontSendNotification);
         newButton->setRadioGroupId(GroupID);
         newButton->addListener(this);
         matrixButtons.emplace_back(newButton);
@@ -146,12 +145,14 @@ void MatrixComponent::paint (Graphics&)
 void MatrixComponent::resized()
 {
     auto r = getLocalBounds();
+    using bounds_t = decltype(r.getWidth());
+    
     nameLabel.setBounds(0, r.getHeight() / 4, r.getWidth(), r.getHeight() / 4);
     
-    decltype(r.getWidth()) buttonZoneWidth = r.getWidth() / matrixButtons.size();
-    decltype(r.getWidth()) buttonWShift = buttonZoneWidth / 2;
-    decltype(r.getWidth()) buttonHShift = r.getHeight() / 2 + r.getHeight() / 4;
-    decltype(r.getWidth()) buttonSize = 100;
+    bounds_t buttonZoneWidth = r.getWidth() / matrixButtons.size();
+    bounds_t buttonWShift = buttonZoneWidth / 2;
+    bounds_t buttonHShift = r.getHeight() / 2 + r.getHeight() / 4;
+    bounds_t buttonSize = 100;
     
     for (auto &it : matrixButtons)
     {
@@ -183,12 +184,12 @@ void MatrixComponent::buttonClicked (Button* button)
 //==============================================================================
 //DelayComponent methods
 
-DelayComponent::DelayComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener, std::vector<int>& delays):
+DelayComponent::DelayComponent(FdnReverberationNewAudioProcessor& processor, InfoComponent& infoComp, MessageListener& msgListener, const std::vector<int>& delays):
         AuxComponent(processor, msgListener, infoComp),
     randomButton("Randomize", std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Randomize delay sliders values"),
     applyButton("Apply", std::bind(&InfoComponent::showInfo, &infoComp, std::placeholders::_1), "Apply all parameters and start processing")
 {
-    std::srand(std::time(nullptr));
+    std::srand((int)std::time(nullptr));
     
     auto delayQuantity = delays.size();
     
@@ -228,17 +229,19 @@ void DelayComponent::paint (Graphics&)
 void DelayComponent::resized()
 {
     auto r = getLocalBounds();
-    decltype(r.getWidth()) nameZoneHeigth = r.getHeight() / 4;
+    using bounds_t = decltype(r.getWidth());
+    
+    bounds_t nameZoneHeigth = r.getHeight() / 4;
     nameLabel.setBounds(0, 0, r.getWidth(), nameZoneHeigth);
     
-    decltype(r.getWidth()) sliderZoneHeigth = r.getHeight() / 2;
+    bounds_t sliderZoneHeigth = r.getHeight() / 2;
     
     if (delaySliders.size() <= 8) // one row of sliders
     {
-        decltype(r.getWidth()) sliderZoneWidth = r.getWidth() / delaySliders.size();
-        decltype(r.getWidth()) sliderWShift = sliderZoneWidth / 2;
-        decltype(r.getWidth()) sliderHShift = nameZoneHeigth + sliderZoneHeigth / 2;
-        decltype(r.getWidth()) sliderSize = std::min(150, (int)(r.getWidth() / delaySliders.size()));
+        bounds_t sliderZoneWidth = r.getWidth() / delaySliders.size();
+        bounds_t sliderWShift = sliderZoneWidth / 2;
+        bounds_t sliderHShift = nameZoneHeigth + sliderZoneHeigth / 2;
+        bounds_t sliderSize = std::min(150, (int)(r.getWidth() / delaySliders.size()));
         
         for (auto &it : delaySliders)
         {
@@ -248,10 +251,10 @@ void DelayComponent::resized()
     }
     else // two rows of sliders
     {
-        decltype(r.getWidth()) sliderZoneWidth = r.getWidth() / delaySliders.size() * 2;
-        decltype(r.getWidth()) sliderWShift = sliderZoneWidth / 2;
-        decltype(r.getWidth()) sliderHShift = nameZoneHeigth + sliderZoneHeigth / 4;
-        decltype(r.getWidth()) sliderSize = std::min(150, int(r.getWidth() / (delaySliders.size() / 2)));
+        bounds_t sliderZoneWidth = r.getWidth() / delaySliders.size() * 2;
+        bounds_t sliderWShift = sliderZoneWidth / 2;
+        bounds_t sliderHShift = nameZoneHeigth + sliderZoneHeigth / 4;
+        bounds_t sliderSize = std::min(150, int(r.getWidth() / (delaySliders.size() / 2)));
         
         for (auto &it : delaySliders)
         {
@@ -266,8 +269,8 @@ void DelayComponent::resized()
     }
     
     auto buttonZoneHeigth = r.getHeight() - sliderZoneHeigth - nameZoneHeigth;
-    decltype(r.getWidth()) buttonWidth = 150;
-    decltype(r.getWidth()) buttonHeight = std::min(50, buttonZoneHeigth);
+    bounds_t buttonWidth = 150;
+    bounds_t buttonHeight = std::min(50, buttonZoneHeigth);
     randomButton.setBounds(r.getWidth() / 4 - buttonWidth / 2, sliderZoneHeigth + nameZoneHeigth + buttonZoneHeigth / 2 - buttonHeight / 2, buttonWidth, buttonHeight);
     applyButton.setBounds(3 * r.getWidth() / 4 - buttonWidth / 2, sliderZoneHeigth + nameZoneHeigth + buttonZoneHeigth / 2 - buttonHeight / 2, buttonWidth, buttonHeight);
 }
@@ -282,7 +285,7 @@ void DelayComponent::randomizeSliders()
     }
 }
 
-void DelayComponent::updateSliders(std::vector<int>& inDelays)
+void DelayComponent::updateSliders(const std::vector<int>& inDelays)
 {
     processor.setProcessingFlag(FdnReverberationNewAudioProcessor::ProcessingFlag::forbidden);
     
@@ -347,11 +350,13 @@ void AdditionalComponent::paint (Graphics&)
 void AdditionalComponent::resized()
 {
     auto r = getLocalBounds();
-    decltype(r.getWidth()) compomentWidth = r.getWidth() / 3;
-    decltype(r.getWidth()) centeredHeight = r.getHeight() / 2;
-    decltype(r.getWidth()) buttonHeigth = std::min(40, r.getHeight());
-    decltype(r.getWidth()) buttonWidth = std::min(100, compomentWidth);
-    decltype(r.getWidth()) sliderSize = std::min({120, compomentWidth, r.getHeight()});
+    using bounds_t = decltype(r.getWidth());
+    
+    bounds_t compomentWidth = r.getWidth() / 3;
+    bounds_t centeredHeight = r.getHeight() / 2;
+    bounds_t buttonHeigth = std::min(40, r.getHeight());
+    bounds_t buttonWidth = std::min(100, compomentWidth);
+    bounds_t sliderSize = std::min({120, compomentWidth, r.getHeight()});
     
     showIrButton.setBounds(compomentWidth / 2 - buttonWidth / 2, centeredHeight - buttonHeigth / 2, buttonWidth, buttonHeigth);
     saveButton.setBounds(2 * compomentWidth + compomentWidth / 2 - buttonWidth / 2, centeredHeight - buttonHeigth / 2, buttonWidth, buttonHeigth);

@@ -43,11 +43,11 @@ public:
         this->rowsSize = rowsSize;
         this->colsSize = colsSize;
         for (auto i = 0; i < rowsSize; ++i)
-            matrixVals.emplace_back(colsSize, initVals);
+            matrixVals.emplace_back(colsSize, std::forward<T>(initVals));
     };
 
     void Set(std::size_t row, std::size_t col, const T&& val) {
-        matrixVals[row][col] = val;
+        matrixVals[row][col] = std::forward<const T>(val);
     };
 
     void SetRow(std::size_t row, std::vector<T>&& rowVal) {
