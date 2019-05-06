@@ -12,7 +12,7 @@ public:
     enum class ProcessingFlag { forbidden = false, allowed = true };
     
     //==============================================================================
-    FdnReverberationNewAudioProcessor(Reverberator::FdnDimension dim = Reverberator::FdnDimension::matrix4d, std::vector<int>&& pow = std::vector<int>{1, 2, 3, 4});
+    FdnReverberationNewAudioProcessor(Reverberator::FdnDimension dim = Reverberator::FdnDimension::matrix4d, std::vector<int>&& pow = {1, 2, 3, 4});
     ~FdnReverberationNewAudioProcessor();
 
     //==============================================================================
@@ -50,7 +50,7 @@ public:
     
     //==============================================================================
     void setDimension (Reverberator::FdnDimension dim);
-    void setDelayPowers (std::vector<int>& pow);
+    void setDelayPowers (const std::vector<int>& pow);
     void setProcessingFlag (ProcessingFlag flag);
     void setDryWet (float drywet);
     

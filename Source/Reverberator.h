@@ -24,11 +24,11 @@ public:
         matrix2d = 2, matrix4d = 4, matrix8d = 8, matrix16d = 16
     };
     
-    Reverberator(FdnDimension dim, std::vector<int>& powers);
+    Reverberator(FdnDimension dim, const std::vector<int>& powers);
     ~Reverberator() {};
     
     void Reverberate(float* audioData, unsigned blockLength, float drywet = 0.5f);
-    void GenerateDelayValues(std::vector<int>& powers);
+    void GenerateDelayValues(const std::vector<int>& powers);
     void SetDimension(FdnDimension dim);
     void SetGain (float gain);
     void SetBVector(std::vector<float>&& b);
@@ -47,7 +47,7 @@ private:
     std::vector<int> maxPowValues; // the restriction to prevent the creation of very long delays (calculates based on the MaxDelay value)
     int delayIdx = 0;
     
-    std::map<FdnDimension, const HadamarMatrix> matrixes;
+    std::map<FdnDimension, const HadamarMatrix> matrices;
     
     const HadamarMatrix* currentMatrix = nullptr;
     

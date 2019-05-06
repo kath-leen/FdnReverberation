@@ -97,7 +97,7 @@ void FdnReverberationNewAudioProcessor::setDimension (Reverberator::FdnDimension
     suspendProcessing (false);
 }
 
-void FdnReverberationNewAudioProcessor::setDelayPowers (std::vector<int>& pow)
+void FdnReverberationNewAudioProcessor::setDelayPowers (const std::vector<int>& pow)
 {
     suspendProcessing (true);
     state = ProcessingState::pending;
@@ -144,7 +144,7 @@ void FdnReverberationNewAudioProcessor::prepareToPlay (double sampleRate, int sa
     blockLength = samplesPerBlock;
     channelsNum = getTotalNumInputChannels();
     for (auto i = 0; i < channelsNum; ++i)
-        reverberators.push_back(Reverberator(dimension, powers));
+        reverberators.emplace_back(Reverberator(dimension, powers));
     checkProcessingState();
 }
 
@@ -195,7 +195,7 @@ void FdnReverberationNewAudioProcessor::processBlock (AudioBuffer<float>& buffer
     {
         auto* channelData = buffer.getWritePointer(channel);
         if (reverberators.size() <= channel)
-            reverberators.push_back(Reverberator(dimension, powers));
+            reverberators.emplace_back(Reverberator(dimension, powers));
         reverberators[channel].Reverberate(channelData, blockLength, drywet);
     }
 }

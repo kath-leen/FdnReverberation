@@ -11,42 +11,39 @@
 #include "Reverberator.h"
 #include "math.h"
 
-Reverberator::Reverberator(FdnDimension dim, std::vector<int>& powers) :
+Reverberator::Reverberator(FdnDimension dim, const std::vector<int>& powers) :
         dimension(dim),
         delayLines((std::size_t)dim, (std::size_t)dim, 0.f)
 {
     CalculateMaxPowerValues();
     GenerateDelayValues(powers);
     
-    matrixes.emplace(std::piecewise_construct,
+    matrices.emplace(std::piecewise_construct,
                      std::forward_as_tuple(FdnDimension::matrix2d),
                      std::forward_as_tuple(2, commonMatrixGain * 1.f / std::sqrt(2.f)));
-    matrixes.emplace(std::piecewise_construct,
+    matrices.emplace(std::piecewise_construct,
                      std::forward_as_tuple(FdnDimension::matrix4d),
                      std::forward_as_tuple(4, commonMatrixGain * 0.5f));
-    matrixes.emplace(std::piecewise_construct,
+    matrices.emplace(std::piecewise_construct,
                      std::forward_as_tuple(FdnDimension::matrix8d),
                      std::forward_as_tuple(8, commonMatrixGain * 0.5f / std::sqrt(2.f)));
-    matrixes.emplace(std::piecewise_construct,
+    matrices.emplace(std::piecewise_construct,
                      std::forward_as_tuple(FdnDimension::matrix16d),
                      std::forward_as_tuple(16, commonMatrixGain * 0.25f));
 }
 
-void Reverberator::GenerateDelayValues(std::vector<int>& powers)
+void Reverberator::GenerateDelayValues(const std::vector<int>& powers)
 {
     delayValues.clear();
     auto idxPrimes = 0;
-    auto maxDelay = 0;
     for (auto &it : powers)
     {
         auto power = (it % maxPowValues[idxPrimes]) ? (it % maxPowValues[idxPrimes]) : maxPowValues[idxPrimes];
         auto newDelayValue = std::pow(PrimesVector[idxPrimes++], power);
         delayValues.push_back(newDelayValue);
-        if (newDelayValue > maxDelay)
-            maxDelay = newDelayValue;
     }
     std::sort(delayValues.begin(), delayValues.end());
-    UpdateDelayLines(maxDelay);
+    UpdateDelayLines(delayValues.back());
     SetBVector(std::vector<float>((int)dimension, bValue));
     SetCVector(std::vector<float>((int)dimension, cValue));
 }
@@ -109,7 +106,7 @@ void Reverberator::Reverberate(float* audioData, unsigned blockLength, float dry
         {
             float dotMultiplication = 0.f;
             for (auto j = 0; j < N; ++j)
-                dotMultiplication += tmp[j] * matrixes.at(dimension).Get(i,j);
+                dotMultiplication += tmp[j] * matrices.at(dimension).Get(i,j);
             delayLines.Set(i, delayIdx, input * bVector[i] + dotMultiplication);
         }
         
